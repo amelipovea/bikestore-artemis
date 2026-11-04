@@ -339,27 +339,6 @@ El frontend VÉLOR está integrado en `bikestore-api/src/main/resources/static/i
 | ![Panel de detalles de Aurel](docs/capturas/02-detalle-bicicleta.png) | ![Formulario de solicitud VÉLOR](docs/capturas/03-formulario-pedido.png) |
 
 
-### Evidencia del backend que debe agregarse
-
-Las capturas del backend deben realizarse **en el equipo donde se ejecuta Spring Boot y Artemis**, para que contengan los datos reales de la prueba. La guía [docs/GUIA_DE_EVIDENCIAS.md](docs/GUIA_DE_EVIDENCIAS.md) indica exactamente qué pantalla abrir, qué comando ejecutar y cómo nombrar cada archivo.
-
-**Capturas recomendadas:** API con `ORDER_PUBLISHED`, PaymentWorker con pago aprobado, EmailWorker con `EMAIL_SENT`, PaymentWorker con los cuatro fallos, consola Artemis mostrando los mensajes de `DLQ.bikestore.orders` y resultado de `mvnw.cmd test`.
-
-No se incluyen aquí imágenes inventadas de terminales ni resultados falsificados. Cuando las agregues a `docs/capturas`, puedes enlazarlas desde esta sección.
-
-## Capturas de Artemis: colas y módulos
-
-Esta sección reúne las **evidencias visuales del broker** para identificar dónde queda cada mensaje, quién lo publica y quién lo consume. No se crea una cola distinta por cada programa: **los servicios comparten destinos de mensajería** y se conectan a ellos mediante sus productores y consumidores JMS.
-
-| Módulo | Función | Destino que se debe mostrar en Artemis | Qué demuestra |
-| --- | --- | --- | --- |
-| **BikeStore API** | Publica pedidos `OrderMessage` | `bikestore.orders` | El pedido ingresó al broker para ser procesado de forma asíncrona. |
-| **PaymentWorker** | Consume pedidos y, si aprueba el pago, publica `PaymentResult` | `bikestore.orders` y `bikestore.paid` | Hay una transición desde el pedido recibido al evento de pago aprobado. |
-| **EmailWorker** | Consume eventos `PAID` | `bikestore.paid` | La confirmación se basa en el resultado del pago, no en la solicitud original. |
-| **Artemis (gestión de fallos)** | Almacena pedidos que agotaron sus intentos | `DLQ.bikestore.orders` | Los mensajes fallidos no se pierden ni se confirman por error. |
-
->
-
 ### 1. Vista general: las colas del sistema
 
 ![Captura pendiente: listado general de colas de Artemis](docs/capturas/16-artemis-vista-general.png)
