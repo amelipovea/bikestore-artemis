@@ -170,7 +170,6 @@ bikestore-artemis/
 ├── email-worker/
 │   └── src/main/java/com/bikestore/email/
 └── docs/
-    ├── GUIA_DE_EVIDENCIAS.md
     └── capturas/
 ```
 
