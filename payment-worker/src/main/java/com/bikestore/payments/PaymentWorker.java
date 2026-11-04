@@ -3,7 +3,10 @@ package com.bikestore.payments;
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 
+import jakarta.jms.DeliveryMode;
 import jakarta.jms.JMSException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.Session;
 import jakarta.jms.TextMessage;
 
 import org.slf4j.Logger;
@@ -13,6 +16,8 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import com.bikestore.contracts.OrderMessage;
+import com.bikestore.contracts.PaymentResult;
+
 import tools.jackson.databind.ObjectMapper;
 
 @Component
@@ -34,11 +39,15 @@ public class PaymentWorker {
     }
 
     @JmsListener(destination = "bikestore.orders")
-    public void recibir(TextMessage mensaje) throws JMSException {
+    public void recibir(
+        TextMessage mensaje,
+        Session session
+    ) throws JMSException {
 
-        String json = mensaje.getText();
-        OrderMessage pedido =
-            mapper.readValue(json, OrderMessage.class);
+        OrderMessage pedido = mapper.readValue(
+            mensaje.getText(),
+            OrderMessage.class
+        );
 
         int intento = mensaje.getIntProperty(
             "JMSXDeliveryCount"
@@ -79,12 +88,48 @@ public class PaymentWorker {
             );
         }
 
+        PaymentResult resultado = new PaymentResult(
+            pedido.pedidoId(),
+            pedido.customerEmail(),
+            pedido.bikeModel(),
+            pedido.quantity(),
+            "PAID",
+            Instant.now().toString()
+        );
+
+        String json = mapper.writeValueAsString(resultado);
+
+        TextMessage evento = session.createTextMessage(json);
+        evento.setJMSCorrelationID(pedido.pedidoId());
+
+        MessageProducer productor = session.createProducer(
+            session.createQueue("bikestore.paid")
+        );
+
+        try {
+            productor.send(
+                evento,
+                DeliveryMode.PERSISTENT,
+                4,
+                0
+            );
+        } finally {
+            productor.close();
+        }
+
         log.info(
             "pedidoId={} timestamp={} thread={} evento=PAYMENT_PAID intento={}",
             pedido.pedidoId(),
             Instant.now(),
             Thread.currentThread().getName(),
             intento
+        );
+
+        log.info(
+            "pedidoId={} timestamp={} thread={} evento=PAYMENT_EVENT_PUBLISHED destino=bikestore.paid",
+            pedido.pedidoId(),
+            Instant.now(),
+            Thread.currentThread().getName()
         );
     }
 }
