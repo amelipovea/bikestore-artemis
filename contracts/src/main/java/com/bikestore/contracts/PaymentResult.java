@@ -1,9 +1,10 @@
 package com.bikestore.contracts;
 
-public record OrderMessage(
+public record PaymentResult(
     String pedidoId,
     String customerEmail,
     String bikeModel,
     int quantity,
-    String createdAt
+    String paymentStatus,
+    String paidAt
 ) {}

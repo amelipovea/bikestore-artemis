@@ -2,15 +2,20 @@ services:
   artemis:
     image: apache/artemis:2.57.0-alpine
     restart: unless-stopped
+
     ports:
       - "127.0.0.1:61616:61616"
       - "127.0.0.1:8161:8161"
+
     environment:
       ARTEMIS_USER: ${ARTEMIS_USER}
       ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
       ANONYMOUS_LOGIN: "false"
+
     volumes:
       - artemis_data:/var/lib/artemis-instance
+      - ./config:/var/lib/artemis-instance/etc-override:ro
+
 
 volumes:
   artemis_data:
